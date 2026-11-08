@@ -1,0 +1,10 @@
+scenario,source_account_id,destination_account_id,amount,expected_result
+valid_transfer,1,2,250.00,SUCCESS
+insufficient_funds,4,2,10.00,INSUFFICIENT_FUNDS
+inactive_source,3,2,10.00,ACCOUNT_INACTIVE
+inactive_destination,1,3,10.00,ACCOUNT_INACTIVE
+same_account,1,1,10.00,SAME_ACCOUNT
+zero_amount,1,2,0.00,INVALID_AMOUNT
+negative_amount,1,2,-5.00,INVALID_AMOUNT
+missing_source,999,2,10.00,ACCOUNT_NOT_FOUND
+missing_destination,1,999,10.00,ACCOUNT_NOT_FOUND
