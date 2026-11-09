@@ -1,3 +1,20 @@
 spring:
   application:
     name: banking-transactions-api
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/movimentacoes_bancarias}
+    username: ${SPRING_DATASOURCE_USERNAME:api_bank}
+    password: ${SPRING_DATASOURCE_PASSWORD:api_bank}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8082

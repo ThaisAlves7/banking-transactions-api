@@ -1,0 +1,51 @@
+name: banking-transactions-api
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: banking-app
+
+    ports:
+      - "8082:8082"
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/movimentacoes_bancarias
+      SPRING_DATASOURCE_USERNAME: api_bank
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-api_bank}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+
+    container_name: banking-postgres
+
+    environment:
+      POSTGRES_DB: movimentacoes_bancarias
+      POSTGRES_USER: api_bank
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-api_bank}
+
+    ports:
+      - "5434:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U api_bank -d movimentacoes_bancarias" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
