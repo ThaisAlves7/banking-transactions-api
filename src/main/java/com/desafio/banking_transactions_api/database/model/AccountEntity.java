@@ -49,3 +49,4 @@ public class AccountEntity {
     @Column(name = "updated_at", updatable = false)
     private OffsetDateTime updatedAt;
 }
+

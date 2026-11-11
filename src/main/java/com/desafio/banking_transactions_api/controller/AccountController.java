@@ -18,9 +18,10 @@ public class AccountController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<List<AccountResponseDto>> findAll() {
+    public ResponseEntity<List<AccountResponseDto>> listAccount() {
         List<AccountResponseDto> accounts = accountService.findAll();
 
         return ResponseEntity.ok(accounts);
     }
 }
+
