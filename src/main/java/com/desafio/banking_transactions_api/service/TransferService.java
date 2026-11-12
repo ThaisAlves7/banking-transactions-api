@@ -40,7 +40,6 @@ public class TransferService {
                 IdempotencyEntity record = existingRecord.get();
 
                 try {
-//                    Retorna o valor da chave idempotência enviada
                     return objectMapper.readValue(
                             record.getResponseBody(),
                             TransferResponseDto.class
@@ -135,6 +134,7 @@ public class TransferService {
                 idempotenciaRepository.save(idempotencyEntity);
 
             } catch (Exception ignored) {
+
             }
         }
 

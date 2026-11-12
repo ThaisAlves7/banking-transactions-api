@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -22,6 +23,7 @@ import java.util.UUID;
 public class TransferEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "transfer_id", updatable = false, nullable = false)
     private UUID transferId;
 
@@ -47,6 +49,7 @@ public class TransferEntity {
     @Column(nullable = false, length = 30)
     private String status;
 
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
 }
