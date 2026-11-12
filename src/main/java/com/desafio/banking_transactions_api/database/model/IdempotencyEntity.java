@@ -2,7 +2,9 @@ package com.desafio.banking_transactions_api.database.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -30,10 +32,15 @@ public class IdempotencyEntity {
     @Column(name = "transfer_id")
     private UUID transferId;
 
+    @NotNull
+    @Column(name = "response_status", nullable = false)
+    private Integer responseStatus;
+
     @Lob
     @Column(name = "response_body", columnDefinition = "TEXT")
     private String responseBody;
 
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
 }

@@ -4,6 +4,7 @@ import com.desafio.banking_transactions_api.enums.AccountStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -43,9 +44,11 @@ public class AccountEntity {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance;
 
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
 
+    @CreationTimestamp
     @Column(name = "updated_at", updatable = false)
     private OffsetDateTime updatedAt;
 }
