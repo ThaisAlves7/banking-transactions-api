@@ -14,7 +14,7 @@ import java.util.UUID;
 public interface TransferRepository extends JpaRepository<TransferEntity, UUID> {
 
     @Query("""
-            SELECT t FROM transfer t
+            SELECT t FROM TransferEntity t
             WHERE t.sourceAccount.id = :accountId
             OR t.destinationAccount.id = :accountId
             ORDER BY t.createdAt DESC
