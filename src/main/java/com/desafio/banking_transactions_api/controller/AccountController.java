@@ -19,9 +19,16 @@ public class AccountController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<List<AccountResponseDto>> listAccount() {
-        List<AccountResponseDto> accounts = accountService.findAll();
+        List<AccountResponseDto> accounts = accountService.findAllAccounts();
 
         return ResponseEntity.ok(accounts);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AccountResponseDto> getAccountId(@PathVariable Long id) {
+        AccountResponseDto account = accountService.findAccountById(id);
+
+        return ResponseEntity.ok(account);
     }
 }
 
