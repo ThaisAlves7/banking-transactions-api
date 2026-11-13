@@ -36,11 +36,20 @@ public class IdempotencyEntity {
     @Column(name = "response_status", nullable = false)
     private Integer responseStatus;
 
+    @NotNull
+    @Column(name = "request_hash", nullable = false)
+    private String requestHash;
+
     @Lob
     @Column(name = "response_body", columnDefinition = "TEXT")
     private String responseBody;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    @PrePersist
+    void prePersist() {
+        this.createdAt = OffsetDateTime.now();
+    }
 }
