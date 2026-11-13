@@ -16,6 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.ObjectMapper;
 
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.Optional;
 
 @Service
@@ -27,17 +32,27 @@ public class TransferService {
     private final IdempotenciaRepository idempotenciaRepository;
     private final ObjectMapper objectMapper;
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TransferResponseDto executeTransfer(
             String idempotencyKey,
             TransferRequestDto request
     ) {
+//        Gera o requestHash para comparação
+        String requestHash = generateRequestHash(request);
 //        Validar repetição na requisição
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             Optional<IdempotencyEntity> existingRecord = idempotenciaRepository.findByIdempotencyKey(idempotencyKey);
 
             if (existingRecord.isPresent()) {
                 IdempotencyEntity record = existingRecord.get();
+
+//                Validação de hash para requisições nova e a guardada
+                if (!record.getRequestHash().equals(requestHash)) {
+                    throw new ResponseStatusException(
+                            HttpStatus.CONFLICT,
+                            "Chaves idempotência diferentes"
+                    );
+                }
 
                 try {
                     return objectMapper.readValue(
@@ -103,6 +118,7 @@ public class TransferService {
         transfer.setDestinationAccount(destination);
         transfer.setAmount(request.amount());
         transfer.setDescription(request.description());
+//        transfer.setCreatedAt();
         transfer.setStatus("COMPLETED");
 
         transferRepository.save(transfer);
@@ -127,18 +143,43 @@ public class TransferService {
                 idempotencyEntity.setIdempotencyKey(idempotencyKey);
                 idempotencyEntity.setTransferId(transfer.getTransferId());
                 idempotencyEntity.setResponseStatus(201);
+                idempotencyEntity.setRequestHash(requestHash);
                 idempotencyEntity.setResponseBody(
                         objectMapper.writeValueAsString(responseDto)
                 );
 
                 idempotenciaRepository.save(idempotencyEntity);
 
-            } catch (Exception ignored) {
-
+            } catch (Exception e) {
+                // 2. Rollback forçado da operação inteira caso ocorra exceção ignorada no registro de idempotência
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Erro ao persistir dados de idempotência",
+                        e
+                );
             }
         }
 
 
         return responseDto;
+    }
+
+    //    Gera o hash de segurança e valida para comparação
+    private String generateRequestHash(TransferRequestDto request) {
+        try {
+            String rawData = String.join("|",
+                    String.valueOf(request.sourceAccountId()),
+                    String.valueOf(request.destinationAccountId()),
+                    request.amount().setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                    request.description() == null ? "" : request.description()
+            );
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] encodedhash = digest.digest(rawData.getBytes(StandardCharsets.UTF_8));
+
+            return HexFormat.of().formatHex(encodedhash);
+        } catch (NoSuchAlgorithmException e) {
+
+            throw new RuntimeException("Erro ao gerar hash da requisição", e);
+        }
     }
 }
