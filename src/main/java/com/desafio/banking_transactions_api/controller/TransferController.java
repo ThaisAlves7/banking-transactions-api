@@ -18,7 +18,7 @@ public class TransferController {
 
     @PostMapping
     public ResponseEntity<TransferResponseDto> transfer(
-            @RequestHeader(value = "Idempotency-Key", required = false)
+            @RequestHeader(value = "Idempotency-Key")
             String idempotencyKey,
             @Valid @RequestBody TransferRequestDto request
     ) {

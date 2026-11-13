@@ -37,37 +37,46 @@ public class TransferService {
             String idempotencyKey,
             TransferRequestDto request
     ) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "O header Idempotency-Key é obrigatório"
+            );
+        }
+
 //        Gera o requestHash para comparação
         String requestHash = generateRequestHash(request);
-//        Validar repetição na requisição
-        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-            Optional<IdempotencyEntity> existingRecord = idempotenciaRepository.findByIdempotencyKey(idempotencyKey);
 
-            if (existingRecord.isPresent()) {
-                IdempotencyEntity record = existingRecord.get();
+//        Remover esse Optional
+        Optional<IdempotencyEntity> existingRecord =
+                idempotenciaRepository.findByIdempotencyKey(idempotencyKey);
+
+        if (existingRecord.isPresent()) {
+            IdempotencyEntity record = existingRecord.get();
 
 //                Validação de hash para requisições nova e a guardada
-                if (!record.getRequestHash().equals(requestHash)) {
-                    throw new ResponseStatusException(
-                            HttpStatus.CONFLICT,
-                            "Chaves idempotência diferentes"
-                    );
-                }
+            if (!record.getRequestHash().equals(requestHash)) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "A chave de idempotência já foi utilizada para outra transação"
+                );
+            }
 
-                try {
-                    return objectMapper.readValue(
-                            record.getResponseBody(),
-                            TransferResponseDto.class
-                    );
+            try {
+                return objectMapper.readValue(
+                        record.getResponseBody(),
+                        TransferResponseDto.class
+                );
 
-                } catch (Exception e) {
-                    throw new ResponseStatusException(
-                            HttpStatus.CONFLICT,
-                            "Conflito na chave de idempotência"
-                    );
-                }
+            } catch (Exception e) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Erro ao recuperar a resposta da transferência original",
+                        e
+                );
             }
         }
+
 
 //        Regras e Validações
         if (request.sourceAccountId().equals(request.destinationAccountId())) {
@@ -170,7 +179,7 @@ public class TransferService {
             String rawData = String.join("|",
                     String.valueOf(request.sourceAccountId()),
                     String.valueOf(request.destinationAccountId()),
-                    request.amount().setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                    request.amount().setScale(2, RoundingMode.UNNECESSARY).toPlainString(),
                     request.description() == null ? "" : request.description()
             );
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
