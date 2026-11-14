@@ -1,4 +1,4 @@
-# Desafio Backend Java — API de Movimentações Bancárias
+# Desafio Backend Java — API de Movimentações Bancárias - Em Andamento
 
 [![CI](https://github.com/ThaisAlves7/banking-transactions-api/actions/workflows/ci.yml/badge.svg)](https://github.com/ThaisAlves7/banking-transactions-api/actions/workflows/ci.yml)
 
