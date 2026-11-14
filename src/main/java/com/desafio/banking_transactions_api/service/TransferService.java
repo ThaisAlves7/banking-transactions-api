@@ -47,7 +47,6 @@ public class TransferService {
 //        Gera o requestHash para comparação
         String requestHash = generateRequestHash(request);
 
-//        Remover esse Optional
         Optional<IdempotencyEntity> existingRecord =
                 idempotenciaRepository.findByIdempotencyKey(idempotencyKey);
 
@@ -86,13 +85,13 @@ public class TransferService {
             );
         }
 
-        AccountEntity source = accountRepository.findById(request.sourceAccountId())
+        AccountEntity source = accountRepository.findByIdWithLock(request.sourceAccountId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Conta de origem não encontrada"
                 ));
 
-        AccountEntity destination = accountRepository.findById(request.destinationAccountId())
+        AccountEntity destination = accountRepository.findByIdWithLock(request.destinationAccountId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Conta de destino não encontrada"
@@ -127,7 +126,6 @@ public class TransferService {
         transfer.setDestinationAccount(destination);
         transfer.setAmount(request.amount());
         transfer.setDescription(request.description());
-//        transfer.setCreatedAt();
         transfer.setStatus("COMPLETED");
 
         transferRepository.save(transfer);
@@ -144,29 +142,26 @@ public class TransferService {
         );
 
 //        Registrar Idempotência
-        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+        try {
 
-            try {
+            IdempotencyEntity idempotencyEntity = new IdempotencyEntity();
+            idempotencyEntity.setIdempotencyKey(idempotencyKey);
+            idempotencyEntity.setTransferId(transfer.getTransferId());
+            idempotencyEntity.setResponseStatus(201);
+            idempotencyEntity.setRequestHash(requestHash);
+            idempotencyEntity.setResponseBody(
+                    objectMapper.writeValueAsString(responseDto)
+            );
 
-                IdempotencyEntity idempotencyEntity = new IdempotencyEntity();
-                idempotencyEntity.setIdempotencyKey(idempotencyKey);
-                idempotencyEntity.setTransferId(transfer.getTransferId());
-                idempotencyEntity.setResponseStatus(201);
-                idempotencyEntity.setRequestHash(requestHash);
-                idempotencyEntity.setResponseBody(
-                        objectMapper.writeValueAsString(responseDto)
-                );
+            idempotenciaRepository.save(idempotencyEntity);
 
-                idempotenciaRepository.save(idempotencyEntity);
-
-            } catch (Exception e) {
-                // 2. Rollback forçado da operação inteira caso ocorra exceção ignorada no registro de idempotência
-                throw new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Erro ao persistir dados de idempotência",
-                        e
-                );
-            }
+        } catch (Exception e) {
+            // 2. Rollback forçado da operação inteira caso ocorra exceção no registro de idempotência
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Erro ao persistir dados de idempotência",
+                    e
+            );
         }
 
 
